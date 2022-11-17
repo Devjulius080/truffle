@@ -12,7 +12,7 @@
   "bugs": {
     "url": "https://github.com/trufflesuite/truffle/issues"
   },
-  "version": "0.14.8",
+  "version": "0.14.9",
   "main": "dist/lib/index.js",
   "files": [
     "dist"
@@ -64,6 +64,5 @@
   ],
   "publishConfig": {
     "access": "public"
-  },
-  "gitHead": "6b84be7849142588ef2e3224d8a9d7c2ceeb6e4a"
+  }
 }
