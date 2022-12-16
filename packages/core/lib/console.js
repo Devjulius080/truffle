@@ -5,6 +5,7 @@ const {
   createInterfaceAdapter
 } = require("@truffle/interface-adapter");
 const contract = require("@truffle/contract");
+const os = require("os");
 const vm = require("vm");
 const expect = require("@truffle/expect");
 const TruffleError = require("@truffle/error");
@@ -261,7 +262,23 @@ class Console extends EventEmitter {
           path.join(this.options.contracts_build_directory, file),
           "utf8"
         );
-        jsonBlobs.push(JSON.parse(body));
+        const json = JSON.parse(body);
+        const metadata = JSON.parse(json.metadata);
+        const sources = Object.keys(metadata.sources);
+        // filter out Truffle's console.log. We don't want users to interact with in the REPL.
+        // user contracts named console.log will be imported, and a warning will be issued.
+        if (
+          sources.length > 1 ||
+          (sources.length === 1 &&
+            !sources.some(source => {
+              return (
+                source === "truffle/console.sol" ||
+                source === "truffle/Console.sol"
+              );
+            }))
+        ) {
+          jsonBlobs.push(json);
+        }
       } catch (error) {
         throw new Error(`Error parsing or reading ${file}: ${error.message}`);
       }
@@ -347,8 +364,13 @@ class Console extends EventEmitter {
     });
 
     spawnedProcess.stdout.on("data", data => {
-      // remove extra newline in `truffle develop` console
-      console.log(data.toString().trim());
+      // convert buffer to string
+      data = data.toString();
+      // workaround: remove extra newline in `truffle develop` console
+      // truffle test, for some reason, appends a newline to the data
+      // it emits here.
+      if (data.endsWith(os.EOL)) data = data.slice(0, -os.EOL.length);
+      console.log(data);
     });
 
     return new Promise((resolve, reject) => {
